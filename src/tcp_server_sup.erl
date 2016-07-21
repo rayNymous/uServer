@@ -19,7 +19,7 @@
 
 -define(SERVER, ?MODULE).
 -define(MAX_RESTART,5).
--define(MAX_TIME, 60).
+-define(MAX_TIME, 30).
 
 %%%===================================================================
 %%% API functions

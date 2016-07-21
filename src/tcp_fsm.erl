@@ -91,10 +91,10 @@ init([]) ->
 %  {stop, Reason :: term(), NewState :: #state{}}).
 %state_name(_Event, State) ->
 %  {next_state, state_name, State}.
-wait_for_socket({socket_ready, Socket}, StateData) when is_port(Socket)->
-  inet:setopts(Socket, [binary, {packet, raw}, {nodealay, true}, {active, once}, {keepalive, true}]),
+wait_for_socket({socket_ready, Socket}, StateData)->% when is_port(Socket)->
+  inet:setopts(Socket, [binary, {packet, raw}, {nodelay, true}, {active, once}, {keepalive, true}]),
   {ok, {Address, _Port}}=inet:peername(Socket),
-  error_logger:info_msg("IP: ~p~n",[Address]),
+  error_logger:info_msg("socket_ready for IP: ~p and port ~p ~n",[Address, _Port]),
   {next_state, wait_for_data, StateData#state{socket= Socket, addr= Address}, ?TIMEOUT};  % we go to this state after timeout
 
 wait_for_socket(Other, StateData) ->
@@ -109,10 +109,12 @@ wait_for_socket(Other, StateData) ->
 
 
 
-wait_for_data({data, Bin}, #state{socket=Socket}=StateData)->
+wait_for_data({data, Bin}, #state{socket=Socket, addr=Address}=StateData)->
   %%just print it
+  error_logger:info_msg("Received data ~p~n", [erlang:binary_to_list(Bin)]),
   ok=gen_tcp:send(Socket, Bin),
-  inet:setopts(Socket, [binary, {packet, raw}, {nodelay, true}, {active, once}, {keepalive, true}]),
+  error_logger:info_msg("Send data back to client ~p ~n", [Address]),
+  inet:setopts(Socket, [binary, {packet, 2}, {nodelay, true}, {active, once}, {keepalive, true}]),
   {next_state, wait_for_data, StateData, ?TIMEOUT};
 
 wait_for_data(timeout, #state{addr=Address}=StateData)->
